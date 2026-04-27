@@ -15,7 +15,7 @@ Extend the shared preset in your repo's `renovate.json`:
 
 ```json
 {
-  "extends": ["local>nationalarchives/renovate-config"]
+  "extends": ["github>nationalarchives/renovate-config"]
 }
 ```
 
@@ -25,7 +25,7 @@ Then add the presets that match your dependency types.
 
 | Preset | Extends as | Description |
 |---|---|---|
-| `default.json` | `local>nationalarchives/renovate-config` | Base settings: `config:recommended`, dashboard, labels, `platformAutomerge`, OSV vulnerability alerts |
+| `default.json` | `github>nationalarchives/renovate-config` | Base settings: `config:recommended`, dashboard, labels, `platformAutomerge`, OSV vulnerability alerts |
 | `github-actions.json` | `…:github-actions` | GitHub Actions: SHA-pins external actions, skips `nationalarchives/*` internal workflows, 7-day cooldown, weekly Monday schedule, automerge all (minor/patch/major) |
 | `python-packages.json` | `…:python-packages` | Python `pip_requirements`: 7-day cooldown, weekly, automerge minor/patch, major requires review. Dev packages use `chore` commit type. |
 | `internal-terraform-modules.json` | `…:internal-terraform-modules` | `nationalarchives/immutable-aws-backup/aws` and `nationalarchives/organizations-ous-by-path/aws` Terraform modules: auto-update with no cooldown |
@@ -38,9 +38,9 @@ Then add the presets that match your dependency types.
 ```json
 {
   "extends": [
-    "local>nationalarchives/renovate-config",
-    "local>nationalarchives/renovate-config:github-actions",
-    "local>nationalarchives/renovate-config:python-packages"
+    "github>nationalarchives/renovate-config",
+    "github>nationalarchives/renovate-config:github-actions",
+    "github>nationalarchives/renovate-config:python-packages"
   ]
 }
 ```
@@ -50,10 +50,10 @@ Then add the presets that match your dependency types.
 ```json
 {
   "extends": [
-    "local>nationalarchives/renovate-config",
-    "local>nationalarchives/renovate-config:github-actions",
-    "local>nationalarchives/renovate-config:python-packages",
-    "local>nationalarchives/renovate-config:internal-terraform-modules"
+    "github>nationalarchives/renovate-config",
+    "github>nationalarchives/renovate-config:github-actions",
+    "github>nationalarchives/renovate-config:python-packages",
+    "github>nationalarchives/renovate-config:internal-terraform-modules"
   ]
 }
 ```
