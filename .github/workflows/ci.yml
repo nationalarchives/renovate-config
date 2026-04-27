@@ -3,7 +3,8 @@ name: CI
 on:
   pull_request:
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   validate:
