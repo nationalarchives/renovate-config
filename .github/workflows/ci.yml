@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Presets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+
+      - name: Install Renovate
+        run: npm install --no-save renovate
+
+      - name: Validate preset files
+        shell: bash {0}
+        run: |
+          EXIT_CODE=0
+          for f in *.json; do
+            [ "$f" = "renovate.json" ] && continue
+            echo "Validating ${f}..."
+            OUTPUT=$(npx renovate-config-validator --strict --no-global "${f}" 2>&1)
+            VALIDATOR_EXIT_CODE=$?
+            printf '%s\n' "$OUTPUT" | grep -v "^npm warn" || true
+            if [ "$VALIDATOR_EXIT_CODE" -ne 0 ]; then
+              EXIT_CODE=1
+            fi
+          done
+          exit $EXIT_CODE
+
+      - name: Validate repo config
+        shell: bash {0}
+        run: |
+          echo "Validating renovate.json..."
+          OUTPUT=$(npx renovate-config-validator 2>&1)
+          VALIDATOR_EXIT_CODE=$?
+          printf '%s\n' "$OUTPUT" | grep -v "^npm warn" || true
+          exit $VALIDATOR_EXIT_CODE

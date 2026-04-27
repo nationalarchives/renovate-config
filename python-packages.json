@@ -1,0 +1,46 @@
+{
+  "packageRules": [
+    {
+      "description": "Python packages — minor/patch (grouped, automerge)",
+      "matchManagers": ["pip_requirements"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "Dependencies (minor/patch)",
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": true,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Python non-prod packages — minor/patch (grouped, no release)",
+      "matchManagers": ["pip_requirements"],
+      "matchFileNames": ["**/requirements-dev*", "**/requirements-docs*"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "Dependencies (minor/patch)",
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": true,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Python packages — major (separate PRs, manual review)",
+      "matchManagers": ["pip_requirements"],
+      "matchUpdateTypes": ["major"],
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": false,
+      "minimumReleaseAge": "7 days",
+      "addLabels": ["approval-needed"]
+    },
+    {
+      "description": "Python non-prod packages — major (separate PRs, no release)",
+      "matchManagers": ["pip_requirements"],
+      "matchFileNames": ["**/requirements-dev*", "**/requirements-docs*"],
+      "matchUpdateTypes": ["major"],
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": false,
+      "minimumReleaseAge": "7 days",
+      "addLabels": ["approval-needed"]
+    }
+  ]
+}

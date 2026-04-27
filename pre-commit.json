@@ -1,0 +1,27 @@
+{
+  "pre-commit": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Pre-commit hooks — minor/patch (grouped, automerge)",
+      "matchManagers": ["pre-commit"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "Dependencies (minor/patch)",
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": true,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Pre-commit hooks — major (separate PRs, manual review)",
+      "matchManagers": ["pre-commit"],
+      "matchUpdateTypes": ["major"],
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": false,
+      "minimumReleaseAge": "7 days",
+      "addLabels": ["approval-needed"]
+    }
+  ]
+}
