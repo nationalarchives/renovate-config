@@ -30,6 +30,7 @@ Then add the presets that match your dependency types.
 | `python-packages.json` | `…:python-packages` | Python `pip_requirements`: 7-day cooldown, weekly, automerge minor/patch, major requires review. Dev packages use `chore` commit type. |
 | `terraform-providers.json` | `…:terraform-providers` | Terraform providers: 7-day cooldown, weekly, automerge minor/patch, major requires review |
 | `internal-terraform-modules.json` | `…:internal-terraform-modules` | `nationalarchives/immutable-aws-backup/aws` and `nationalarchives/organizations-ous-by-path/aws` Terraform modules: auto-update with no cooldown |
+| `pre-commit.json` | `…:pre-commit` | Pre-commit hooks: 7-day cooldown, weekly, automerge minor/patch, major requires review |
 
 ## Consumer examples
 
