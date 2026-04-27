@@ -1,0 +1,16 @@
+{
+  "packageRules": [
+    {
+      "description": "Internal Terraform modules — auto-update, no cooldown",
+      "matchManagers": ["terraform"],
+      "matchPackageNames": [
+        "nationalarchives/immutable-aws-backup/aws",
+        "nationalarchives/organizations-ous-by-path/aws"
+      ],
+      "automerge": true,
+      "minimumReleaseAge": "0 days",
+      "groupName": "Internal Terraform Modules",
+      "addLabels": ["internal"]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "packageRules": [
+    {
+      "description": "Terraform providers — minor/patch (grouped, automerge)",
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["provider"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "Dependencies (minor/patch)",
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": true,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Terraform providers — major (separate PRs, manual review)",
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["provider"],
+      "matchUpdateTypes": ["major"],
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": false,
+      "minimumReleaseAge": "7 days",
+      "addLabels": ["approval-needed"]
+    }
+  ]
+}

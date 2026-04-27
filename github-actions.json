@@ -1,0 +1,21 @@
+{
+  "packageRules": [
+    {
+      "description": "Internal reusable workflows — skip (intentionally follow @main)",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["/^nationalarchives\\//"],
+      "enabled": false
+    },
+    {
+      "description": "GitHub Actions — all updates (grouped, automerge)",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest", "major"],
+      "pinDigests": true,
+      "groupName": "Dependencies (minor/patch)",
+      "semanticCommitType": "chore",
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": true,
+      "minimumReleaseAge": "7 days"
+    }
+  ]
+}
