@@ -26,9 +26,21 @@ jobs:
         run: |
           EXIT_CODE=0
           for f in *.json; do
+            [ "$f" = "renovate.json" ] && continue
             echo "Validating ${f}..."
-            if ! npx --yes renovate-config-validator --strict --no-global "${f}" 2>&1 | grep -v "^npm warn"; then
+            OUTPUT=$(npx --yes renovate-config-validator --strict --no-global "${f}" 2>&1)
+            VALIDATOR_EXIT_CODE=$?
+            printf '%s\n' "$OUTPUT" | grep -v "^npm warn" || true
+            if [ "$VALIDATOR_EXIT_CODE" -ne 0 ]; then
               EXIT_CODE=1
             fi
           done
           exit $EXIT_CODE
+
+      - name: Validate repo config
+        run: |
+          echo "Validating renovate.json..."
+          OUTPUT=$(npx --yes renovate-config-validator 2>&1)
+          VALIDATOR_EXIT_CODE=$?
+          printf '%s\n' "$OUTPUT" | grep -v "^npm warn" || true
+          exit $VALIDATOR_EXIT_CODE

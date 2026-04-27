@@ -11,7 +11,7 @@
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest", "major"],
       "pinDigests": true,
-      "groupName": "Dependencies (minor/patch)",
+      "groupName": "Dependencies (all updates)",
       "semanticCommitType": "chore",
       "schedule": ["* 0-5 * * 1"],
       "automerge": true,
