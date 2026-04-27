@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install Renovate
+        run: npm install --no-save renovate
+
       - name: Validate preset files
         shell: bash {0}
         run: |
@@ -29,7 +32,7 @@ jobs:
           for f in *.json; do
             [ "$f" = "renovate.json" ] && continue
             echo "Validating ${f}..."
-            OUTPUT=$(npx --yes renovate-config-validator --strict --no-global "${f}" 2>&1)
+            OUTPUT=$(npx renovate-config-validator --strict --no-global "${f}" 2>&1)
             VALIDATOR_EXIT_CODE=$?
             printf '%s\n' "$OUTPUT" | grep -v "^npm warn" || true
             if [ "$VALIDATOR_EXIT_CODE" -ne 0 ]; then
@@ -42,7 +45,7 @@ jobs:
         shell: bash {0}
         run: |
           echo "Validating renovate.json..."
-          OUTPUT=$(npx --yes renovate-config-validator 2>&1)
+          OUTPUT=$(npx renovate-config-validator 2>&1)
           VALIDATOR_EXIT_CODE=$?
           printf '%s\n' "$OUTPUT" | grep -v "^npm warn" || true
           exit $VALIDATOR_EXIT_CODE

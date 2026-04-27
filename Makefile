@@ -6,8 +6,8 @@ validate:
 	@echo "=== Validating preset files ==="
 	@for f in $(PRESET_FILES); do \
 		echo "  $$f"; \
-		npx --yes renovate-config-validator --strict --no-global "$$f"; \
+		npx --package renovate -- renovate-config-validator --strict --no-global "$$f"; \
 	done
 	@echo "=== Validating repo config ==="
 	@echo "  renovate.json"
-	@npx --yes renovate-config-validator
+	@npx --package renovate -- renovate-config-validator
