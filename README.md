@@ -28,7 +28,6 @@ Then add the presets that match your dependency types.
 | `default.json` | `github>nationalarchives/renovate-config` | Base settings: `config:recommended`, dashboard, labels, `platformAutomerge`, OSV vulnerability alerts |
 | `github-actions.json` | `…:github-actions` | GitHub Actions: SHA-pins external actions, skips `nationalarchives/*` internal workflows, 7-day cooldown, weekly Monday schedule, automerge all (minor/patch/major) |
 | `python-packages.json` | `…:python-packages` | Python `pip_requirements`: 7-day cooldown, weekly, automerge minor/patch, major requires review. Dev packages use `chore` commit type. |
-| `terraform-providers.json` | `…:terraform-providers` | Terraform providers: 7-day cooldown, weekly, automerge minor/patch, major requires review |
 | `internal-terraform-modules.json` | `…:internal-terraform-modules` | `nationalarchives/immutable-aws-backup/aws` and `nationalarchives/organizations-ous-by-path/aws` Terraform modules: auto-update with no cooldown |
 | `pre-commit.json` | `…:pre-commit` | Pre-commit hooks: 7-day cooldown, weekly, automerge minor/patch, major requires review |
 
@@ -55,17 +54,6 @@ Then add the presets that match your dependency types.
     "github>nationalarchives/renovate-config:github-actions",
     "github>nationalarchives/renovate-config:python-packages",
     "github>nationalarchives/renovate-config:internal-terraform-modules"
-  ]
-}
-```
-
-### Repo using Terraform providers
-
-```json
-{
-  "extends": [
-    "github>nationalarchives/renovate-config",
-    "github>nationalarchives/renovate-config:terraform-providers"
   ]
 }
 ```
