@@ -1,0 +1,28 @@
+{
+  "packageRules": [
+    {
+      "description": "Public Terraform modules — minor/patch automerge, 7-day cooldown",
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchPackageNames": [
+        "!nationalarchives/immutable-aws-backup/aws",
+        "!nationalarchives/organizations-ous-by-path/aws"
+      ],
+      "automerge": true,
+      "minimumReleaseAge": "7 days",
+      "groupName": "Public Terraform Modules (minor/patch)"
+    },
+    {
+      "description": "Public Terraform modules — major updates, PR only, 7-day cooldown",
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "!nationalarchives/immutable-aws-backup/aws",
+        "!nationalarchives/organizations-ous-by-path/aws"
+      ],
+      "automerge": false,
+      "minimumReleaseAge": "7 days",
+      "groupName": "Public Terraform Modules (major)"
+    }
+  ]
+}

@@ -1,2 +1,5 @@
 # Renovate dry-run output
 renovate-dry-run.log
+
+# Agent documentation cache
+.agent-cache
