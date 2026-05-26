@@ -9,51 +9,101 @@ This repository works with the
 (hosted by Mend). Each consumer repo extends the shared
 presets via `"extends"` in its `renovate.json`.
 
-## Quick start
+## Onboard repo to Renovate
 
-Extend the shared preset in your repo's `renovate.json`:
+1. Remove `.github/dependabot.yml`
+
+2. Add a file `renovate.json` to your repo with the following content:
 
 ```json
 {
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>nationalarchives/renovate-config"]
 }
 ```
 
-Then add the presets that match your dependency types.
+
+3. Install the Mend **Renovate** app to the repo (may require GitHub admin approval)
+
 
 ## Shared presets
 
+By default, this applies all of the language specific configurations listed below. Each preset is scoped via `matchManagers`, so rules only apply when Renovate detects that manager in the repo — there's no
+need to opt in per language.
+
 | Preset | Extends as | Description |
 |---|---|---|
-| `default.json` | `github>nationalarchives/renovate-config` | Base settings: `config:recommended`, dashboard, labels, `platformAutomerge`, OSV vulnerability alerts |
+| `default.json` | `github>nationalarchives/renovate-config` | Base settings (`config:recommended`, dashboard, labels, `platformAutomerge`, OSV vulnerability alerts) **plus** all manager presets listed below |
 | `github-actions.json` | `…:github-actions` | GitHub Actions: SHA-pins external actions, skips `nationalarchives/*` internal workflows, 7-day cooldown, weekly Monday schedule, automerge all (minor/patch/major) |
 | `python-packages.json` | `…:python-packages` | Python `pip_requirements`: 7-day cooldown, weekly, automerge minor/patch, major requires review. Dev packages use `chore` commit type. |
-| `internal-terraform-modules.json` | `…:internal-terraform-modules` | `nationalarchives/immutable-aws-backup/aws` and `nationalarchives/organizations-ous-by-path/aws` Terraform modules: auto-update with no cooldown |
 | `pre-commit.json` | `…:pre-commit` | Pre-commit hooks: 7-day cooldown, weekly, automerge minor/patch, major requires review |
+| `public-terraform-modules.json` | `…:public-terraform-modules` | Public Terraform modules: 7-day cooldown, automerge minor/patch, major PR only |
+| `internal-terraform-modules.json` | `…:internal-terraform-modules` | `nationalarchives/immutable-aws-backup/aws` and `nationalarchives/organizations-ous-by-path/aws` Terraform modules: auto-update with no cooldown |
 
-## Consumer examples
+The individual presets are still exposed (`…:github-actions`,
+`…:python-packages`, etc.) so a repo can extend just one if it
+needs to override or compose them differently.
 
-### Repo using GitHub Actions + Python
+## Opting out or overriding
+
+Because every manager preset is pulled in transitively from
+`default.json`, consumer repos sometimes need to disable or
+replace one. Renovate supports this via
+[`ignorePresets`](https://docs.renovatebot.com/configuration-options/#ignorepresets)
+and `packageRules` overrides.
+
+### Opt out of a single preset
+
+List the exact preset string used by `default.json`:
 
 ```json
 {
-  "extends": [
-    "github>nationalarchives/renovate-config",
-    "github>nationalarchives/renovate-config:github-actions",
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>nationalarchives/renovate-config"],
+  "ignorePresets": [
     "github>nationalarchives/renovate-config:python-packages"
   ]
 }
 ```
 
-### Repo using internal Terraform modules
+The named preset is stripped from the resolved config before
+rules are applied.
+
+### Override behaviour in place
+
+`packageRules` declared in the repo's `renovate.json` are
+evaluated **after** those pulled in via `extends`, so later
+rules override earlier ones for the same match. Use this for
+small tweaks (e.g. disabling one package, forcing automerge
+for another):
 
 ```json
 {
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>nationalarchives/renovate-config"],
+  "packageRules": [
+    {
+      "matchManagers": ["terraform"],
+      "matchPackageNames": ["hashicorp/aws"],
+      "enabled": false
+    }
+  ]
+}
+```
+
+### Replace a preset with a custom one
+
+Combine `ignorePresets` with an additional `extends` entry:
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>nationalarchives/renovate-config",
-    "github>nationalarchives/renovate-config:github-actions",
-    "github>nationalarchives/renovate-config:python-packages",
-    "github>nationalarchives/renovate-config:internal-terraform-modules"
+    "github>nationalarchives/some-other-repo:python-packages-strict"
+  ],
+  "ignorePresets": [
+    "github>nationalarchives/renovate-config:python-packages"
   ]
 }
 ```

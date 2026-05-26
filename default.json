@@ -1,6 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended",
+    "github>nationalarchives/renovate-config:github-actions",
+    "github>nationalarchives/renovate-config:python-packages",
+    "github>nationalarchives/renovate-config:pre-commit",
+    "github>nationalarchives/renovate-config:public-terraform-modules",
+    "github>nationalarchives/renovate-config:internal-terraform-modules"
+  ],
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "Dependency Dashboard",
   "dependencyDashboardLabels": ["dependencies"],
