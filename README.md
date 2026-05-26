@@ -28,8 +28,7 @@ presets via `"extends"` in its `renovate.json`.
 
 ## Shared presets
 
-By default, this applies all of the language specific configurations listed below. Each preset is scoped via `matchManagers`, so rules only apply when Renovate detects that manager in the repo — there's no
-need to opt in per language.
+By default, this applies all of the language specific configurations listed below. Each preset is scoped via `matchManagers`, so rules only apply when Renovate detects that manager in the repo — there's no need to opt in per language.
 
 | Preset | Extends as | Description |
 |---|---|---|
