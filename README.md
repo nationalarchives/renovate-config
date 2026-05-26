@@ -22,8 +22,9 @@ presets via `"extends"` in its `renovate.json`.
 }
 ```
 
+3. Install the Mend **Renovate** app to the repo (requires GitHub admin approval)
 
-3. Install the Mend **Renovate** app to the repo (may require GitHub admin approval)
+4. In repository settings, enable **auto-merge**
 
 
 ## Shared presets
