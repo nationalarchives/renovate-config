@@ -6,7 +6,7 @@
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "groupName": "Dependencies (minor/patch)",
       "semanticCommitType": "chore",
-      "schedule": ["* 0-5 * * 1"],
+      "schedule": ["* * * * *"],
       "automerge": true,
       "minimumReleaseAge": "7 days"
     },
@@ -17,7 +17,7 @@
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "groupName": "Dependencies (minor/patch)",
       "semanticCommitType": "chore",
-      "schedule": ["* 0-5 * * 1"],
+      "schedule": ["* * * * *"],
       "automerge": true,
       "minimumReleaseAge": "7 days"
     },
@@ -26,7 +26,7 @@
       "matchManagers": ["pip_requirements"],
       "matchUpdateTypes": ["major"],
       "semanticCommitType": "chore",
-      "schedule": ["* 0-5 * * 1"],
+      "schedule": ["* * * * *"],
       "automerge": false,
       "minimumReleaseAge": "7 days",
       "addLabels": ["approval-needed"]
@@ -37,7 +37,7 @@
       "matchFileNames": ["**/requirements-dev*", "**/requirements-docs*"],
       "matchUpdateTypes": ["major"],
       "semanticCommitType": "chore",
-      "schedule": ["* 0-5 * * 1"],
+      "schedule": ["* * * * *"],
       "automerge": false,
       "minimumReleaseAge": "7 days",
       "addLabels": ["approval-needed"]
