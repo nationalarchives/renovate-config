@@ -34,9 +34,9 @@ By default, this applies all of the language specific configurations listed belo
 | Preset | Extends as | Description |
 |---|---|---|
 | `default.json` | `github>nationalarchives/renovate-config` | Base settings (`config:recommended`, dashboard, labels, `platformAutomerge`, OSV vulnerability alerts) **plus** all manager presets listed below |
-| `github-actions.json` | `…:github-actions` | GitHub Actions: SHA-pins external actions, skips `nationalarchives/*` internal workflows, 7-day cooldown, weekly Monday schedule, automerge all (minor/patch/major) |
-| `python-packages.json` | `…:python-packages` | Python `pip_requirements`: 7-day cooldown, weekly, automerge minor/patch, major requires review. Dev packages use `chore` commit type. |
-| `pre-commit.json` | `…:pre-commit` | Pre-commit hooks: 7-day cooldown, weekly, automerge minor/patch, major requires review |
+| `github-actions.json` | `…:github-actions` | GitHub Actions: SHA-pins external actions, skips `nationalarchives/*` internal workflows, 7-day cooldown, automerge all (minor/patch/major) |
+| `python-packages.json` | `…:python-packages` | Python `pip_requirements`: 7-day cooldown, automerge minor/patch, major requires review. Dev packages use `chore` commit type. |
+| `pre-commit.json` | `…:pre-commit` | Pre-commit hooks: 7-day cooldown, automerge minor/patch, major requires review |
 | `public-terraform-modules.json` | `…:public-terraform-modules` | Public Terraform modules: 7-day cooldown, automerge minor/patch, major PR only |
 | `internal-terraform-modules.json` | `…:internal-terraform-modules` | `nationalarchives/immutable-aws-backup/aws` and `nationalarchives/organizations-ous-by-path/aws` Terraform modules: auto-update with no cooldown |
 
