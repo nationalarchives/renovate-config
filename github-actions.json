@@ -13,7 +13,6 @@
       "pinDigests": true,
       "groupName": "Dependencies (all updates)",
       "semanticCommitType": "chore",
-      "schedule": ["* 0-5 * * 1"],
       "automerge": true,
       "minimumReleaseAge": "7 days"
     }
