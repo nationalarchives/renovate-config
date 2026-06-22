@@ -35,6 +35,7 @@ By default, this applies all of the language specific configurations listed belo
 |---|---|---|
 | `default.json` | `github>nationalarchives/renovate-config` | Base settings (`config:recommended`, dashboard, labels, `platformAutomerge`, OSV vulnerability alerts) **plus** all manager presets listed below |
 | `github-actions.json` | `…:github-actions` | GitHub Actions: SHA-pins external actions, skips `nationalarchives/*` internal workflows, 7-day cooldown, automerge all (minor/patch/major) |
+| `internal-actions.json` | `…:internal-actions` | Internal `nationalarchives/org-actions` reusable actions: re-enables them (overriding the `nationalarchives/*` skip), SHA-pins, auto-updates semver (minor/patch/major) with **no cooldown** and automerge |
 | `python-packages.json` | `…:python-packages` | Python `pip_requirements`: 7-day cooldown, automerge minor/patch, major requires review. Dev packages use `chore` commit type. |
 | `pre-commit.json` | `…:pre-commit` | Pre-commit hooks: 7-day cooldown, automerge minor/patch, major requires review |
 | `public-terraform-modules.json` | `…:public-terraform-modules` | Public Terraform modules: 7-day cooldown, automerge minor/patch, major PR only |

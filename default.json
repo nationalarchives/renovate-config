@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended",
     "github>nationalarchives/renovate-config:github-actions",
+    "github>nationalarchives/renovate-config:internal-actions",
     "github>nationalarchives/renovate-config:python-packages",
     "github>nationalarchives/renovate-config:pre-commit",
     "github>nationalarchives/renovate-config:public-terraform-modules",
