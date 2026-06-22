@@ -1,0 +1,16 @@
+{
+  "packageRules": [
+    {
+      "description": "Internal org-actions — auto-update semver, no cooldown, automerge",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["/^nationalarchives\\/org-actions(\\/|$)/"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
+      "enabled": true,
+      "pinDigests": true,
+      "groupName": "Internal Actions (org-actions)",
+      "semanticCommitType": "chore",
+      "automerge": true,
+      "minimumReleaseAge": "0 days"
+    }
+  ]
+}
