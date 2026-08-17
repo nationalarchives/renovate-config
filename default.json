@@ -17,7 +17,7 @@
   "prHourlyLimit": 0,
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
-    "description": "Disabled — using osvVulnerabilityAlerts instead",
-    "enabled": false
+    "labels": ["dependencies", "security"],
+    "minimumReleaseAge": null
   }
 }
