@@ -1,0 +1,102 @@
+name: Run Renovate
+
+# Reusable workflow that runs the Renovate CLI against the calling repository.
+#
+# Renovate CLI is used in preference to the Mend Renovate app where a run needs
+# credentials the app cannot hold, such as an AWS role assumed via OIDC, or
+# where commits must be GPG signed by a specific bot account.
+#
+# The calling repository supplies the three secrets below from its own Actions
+# secrets; this repository holds no secrets of its own.
+
+on:
+  workflow_call:
+    inputs:
+      git-author-name:
+        description: >-
+          Name Renovate commits as. Must be the GitHub account that owns the
+          PAT, otherwise pull request status checks will not run.
+        type: string
+        default: "tna-ds-backup"
+        required: false
+      git-author-email:
+        description: >-
+          Email Renovate commits as. Must be a verified address on the bot
+          account AND match the UID of the GPG key, or GitHub will not mark the
+          commits as Verified.
+        type: string
+        default: "s-GitHubDSBackup@nationalarchives.gov.uk"
+        required: false
+      log-level:
+        description: "Renovate log level. Set to debug when troubleshooting."
+        type: string
+        default: "info"
+        required: false
+    secrets:
+      RENOVATE_GITHUB_TOKEN:
+        description: >-
+          Fine-grained PAT owned by the bot account. Needs repository Contents,
+          Issues, Pull requests, Commit statuses and Workflows read/write,
+          Dependabot alerts read, plus organization Members read.
+        required: true
+      RENOVATE_GPG_PRIVATE_KEY:
+        description: "ASCII armoured GPG private key of the bot account."
+        required: true
+      RENOVATE_GPG_PASSPHRASE:
+        description: "Passphrase for the GPG private key."
+        required: true
+
+jobs:
+  renovate:
+    name: Dependency Dashboard
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      # This repository, not the caller: Renovate reads its own configuration
+      # from the caller over the API, so only .renovate-version is needed here.
+      - name: Checkout renovate-config
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: nationalarchives/renovate-config
+
+      - name: Read Renovate version
+        id: renovate-version
+        run: echo "version=$(cat .renovate-version | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
+      # Renovate ignores the passphrase on a GPG key: GPGKey in
+      # lib/util/git/private-key.ts logs "Passphrase is not yet supported for
+      # GPG keys, it will be ignored". The key must therefore already be
+      # unlocked in gpg-agent before Renovate signs anything. This step imports
+      # it with the passphrase and leaves it cached in the agent; Renovate then
+      # re-imports the same key and sets user.signingkey and commit.gpgsign in
+      # the repository clone. Both steps are required.
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          gpg_private_key: ${{ secrets.RENOVATE_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.RENOVATE_GPG_PASSPHRASE }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Run Renovate
+        # "shell: bash" enables pipefail so a non-zero Renovate exit is not
+        # swallowed by the grep that filters npm warnings.
+        shell: bash
+        run: npx --yes renovate@${{ steps.renovate-version.outputs.version }} 2>&1 | grep -v "^npm warn"
+        env:
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_GITHUB_TOKEN }}
+          RENOVATE_GIT_AUTHOR: "${{ inputs.git-author-name }} <${{ inputs.git-author-email }}>"
+          RENOVATE_GIT_PRIVATE_KEY: ${{ secrets.RENOVATE_GPG_PRIVATE_KEY }}
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          LOG_LEVEL: ${{ inputs.log-level }}
