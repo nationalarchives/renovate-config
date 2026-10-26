@@ -100,10 +100,13 @@ jobs:
 
       # This repository, not the caller: Renovate reads its own configuration
       # from the caller over the API, so only .renovate-version is needed here.
+      # Renovate clones the target repository itself using RENOVATE_TOKEN, so
+      # no git credentials are needed on this clone.
       - name: Checkout renovate-config
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: nationalarchives/renovate-config
+          persist-credentials: false
 
       - name: Read Renovate version
         id: renovate-version
@@ -208,8 +211,9 @@ jobs:
         # "shell: bash" enables pipefail so a non-zero Renovate exit is not
         # swallowed by the grep that filters npm warnings.
         shell: bash
-        run: npx --yes renovate@${{ steps.renovate-version.outputs.version }} 2>&1 | grep -v "^npm warn"
+        run: npx --yes "renovate@$RENOVATE_VERSION" 2>&1 | grep -v "^npm warn"
         env:
+          RENOVATE_VERSION: ${{ steps.renovate-version.outputs.version }}
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_GITHUB_TOKEN }}
           RENOVATE_GIT_AUTHOR: "${{ inputs.git-author-name }} <${{ inputs.git-author-email }}>"
           RENOVATE_GIT_PRIVATE_KEY: ${{ secrets.RENOVATE_GPG_PRIVATE_KEY }}
