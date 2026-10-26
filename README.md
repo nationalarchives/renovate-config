@@ -174,11 +174,16 @@ Versions are ordered with `regex` versioning as
 `major.minor.patch-build`, so `0.0.6-3` supersedes `0.0.6-2`, and
 `0.0.7-1` supersedes both.
 
-The preset automerges pins under `_vars/dev/` and raises
-review-only PRs for `_vars/staging/` and `_vars/live/`, each on
-its own branch so one environment can merge without the others.
-Override `matchFileNames` in the repo's `renovate.json` if it
-uses a different layout.
+The preset raises **one grouped PR per environment**: pins under
+`_vars/dev/` are automerged once checks pass, while
+`_vars/staging/` and `_vars/live/` raise review-only PRs. Each
+environment gets its own branch, so one can merge without the
+others. Override `matchFileNames` in the repo's `renovate.json`
+if it uses a different layout.
+
+Grouping means a single failing Terraform plan holds up every
+image in that environment. If you would rather have one PR per
+image, override `groupName` to `null`.
 
 > Port `8099` and the `<Image tag>.json` filenames are a contract
 > between `run-renovate.yml` and `aws-ami.json`. Change one and
