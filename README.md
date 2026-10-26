@@ -145,6 +145,65 @@ Digital Services repositories.
 | `git-author-name` | `tna-ds-backup` | Commit author. Must be the GitHub account owning the PAT, or status checks will not run on Renovate's pull requests. |
 | `git-author-email` | `s-GitHubDSBackup@nationalarchives.gov.uk` | Commit author email. Must be a verified address on the bot account **and** match the GPG key UID, or commits will not show as Verified. |
 | `log-level` | `info` | Set to `debug` when troubleshooting. |
+| `enable-ami-lookup` | `false` | Serve EC2 Image Builder AMI versions to Renovate. Required by the `aws-ami` preset. |
+| `aws-role-to-assume` | _(none)_ | IAM role ARN assumed via OIDC. Needs `ec2:DescribeImages`. Required when `enable-ami-lookup` is `true`. |
+| `aws-region` | `eu-west-2` | Region queried for AMIs. |
+| `ami-image-filter` | `*` | Matched against the AMI `Image` tag, to narrow a run to one team's images. Wildcards allowed. |
+
+### AMI version lookup
+
+Set `enable-ami-lookup: true` and extend the `aws-ami` preset to
+keep Image Builder AMI version pins up to date.
+
+EC2 Image Builder stamps every build with two tags: `Image`
+(stable, e.g. `ds-web-frontend`) and `ImageVersion` (e.g.
+`0.0.6-2`, formed from the recipe version and the build number).
+The workflow reads those tags, writes one JSON manifest per
+image, and serves them on `127.0.0.1:8099` for the duration of
+the run. Renovate then treats each image as an ordinary
+dependency.
+
+Annotate each pin with the `Image` tag value, on the line above:
+
+```hcl
+# renovate: ami=ds-web-frontend
+web_frontend_image_version = "0.0.6-2"
+```
+
+Versions are ordered with `regex` versioning as
+`major.minor.patch-build`, so `0.0.6-3` supersedes `0.0.6-2`, and
+`0.0.7-1` supersedes both.
+
+The preset automerges pins under `_vars/dev/` and raises
+review-only PRs for `_vars/staging/` and `_vars/live/`, each on
+its own branch so one environment can merge without the others.
+Override `matchFileNames` in the repo's `renovate.json` if it
+uses a different layout.
+
+> Port `8099` and the `<Image tag>.json` filenames are a contract
+> between `run-renovate.yml` and `aws-ami.json`. Change one and
+> you must change the other.
+
+A caller enabling AMI lookup adds a `with:` block:
+
+```yaml
+    uses: nationalarchives/renovate-config/.github/workflows/run-renovate.yml@main
+    with:
+      enable-ami-lookup: true
+      aws-role-to-assume: arn:aws:iam::846769538626:role/GithubOIDCProviderIAMRolePermissions-Role-I80RXHT6O1PL
+      ami-image-filter: "ds-*"
+```
+
+and extends the preset in `renovate.json`:
+
+```json
+{
+  "extends": [
+    "github>nationalarchives/renovate-config",
+    "github>nationalarchives/renovate-config:aws-ami"
+  ]
+}
+```
 
 ### Renovate version
 
