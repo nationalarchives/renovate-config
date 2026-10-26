@@ -4,5 +4,15 @@
     "github>nationalarchives/renovate-config",
     "github>nationalarchives/renovate-config:github-actions"
   ],
-  "enabledManagers": ["github-actions"]
+  "enabledManagers": ["github-actions", "custom.regex"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Keep the pinned Renovate CLI version in .renovate-version up to date",
+      "managerFilePatterns": ["/^\\.renovate-version$/"],
+      "matchStrings": ["(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*"],
+      "depNameTemplate": "renovate",
+      "datasourceTemplate": "npm"
+    }
+  ]
 }

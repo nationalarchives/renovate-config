@@ -9,7 +9,13 @@ This repository works with the
 (hosted by Mend). Each consumer repo extends the shared
 presets via `"extends"` in its `renovate.json`.
 
-## Onboard repo to Renovate
+Repositories that need credentials the app cannot hold —
+principally an AWS role assumed via OIDC — run the
+[Renovate CLI](#using-the-renovate-cli-instead-of-the-app)
+from a reusable workflow in this repository instead. Both
+modes read the same presets.
+
+## Onboard repo to Renovate App
 
 1. Remove `.github/dependabot.yml`
 
@@ -40,10 +46,168 @@ By default, this applies all of the language specific configurations listed belo
 | `pre-commit.json` | `…:pre-commit` | Pre-commit hooks: 7-day cooldown, automerge minor/patch, major requires review |
 | `public-terraform-modules.json` | `…:public-terraform-modules` | Public Terraform modules: 7-day cooldown, automerge minor/patch, major PR only |
 | `internal-terraform-modules.json` | `…:internal-terraform-modules` | `nationalarchives/immutable-aws-backup/aws` and `nationalarchives/organizations-ous-by-path/aws` Terraform modules: auto-update with no cooldown |
+| `aws-ami.json` | `…:aws-ami` | **CLI only.** Pinned EC2 Image Builder AMI versions in Terraform `.tfvars`. Resolves versions from a custom datasource populated by an AWS API call, so it has no effect under the Mend app — see [Using the Renovate CLI instead of the app](#using-the-renovate-cli-instead-of-the-app). Not included in `default.json`; extend it explicitly. |
 
 The individual presets are still exposed (`…:github-actions`,
 `…:python-packages`, etc.) so a repo can extend just one if it
 needs to override or compose them differently.
+
+## Using the Renovate CLI instead of the app
+
+The Mend app runs on Mend's infrastructure and can only reach
+public registries and the GitHub API. Where a repository pins a
+version that lives behind a **private AWS API** — for example the
+`ImageVersion` tag on an AMI published by EC2 Image Builder —
+the app has no way to discover the available versions.
+
+For those repositories, run the **Renovate CLI** from a GitHub
+Actions runner instead. The runner assumes an AWS role via OIDC,
+queries the AWS API for the available versions, and hands the
+result to Renovate as a custom datasource. Everything else is
+unchanged: the same presets are resolved from this repository,
+and the same pull requests, labels and dashboard are produced.
+
+> **Run one or the other, never both.** If the Mend app is
+> installed on a repository that also runs the CLI, every update
+> is raised twice. Uninstall the app from the repository (or
+> exclude it from the app's repository selection) before enabling
+> the scheduled CLI workflow.
+
+### How it works
+
+1. `.github/workflows/run-renovate.yml` in this repository is a
+   reusable (`workflow_call`) workflow. Consumer repositories call
+   it from a scheduled workflow of their own.
+2. The job assumes the configured AWS role using GitHub's OIDC
+   provider, so no long-lived AWS keys are stored anywhere.
+3. It calls the AWS API, writes one small JSON manifest per image
+   and serves them from a short-lived HTTP server on `127.0.0.1`.
+   Renovate's `customDatasources` reads from that URL.
+
+   A local file URL is not an option here: Renovate sandboxes
+   `file://` datasource reads to its own repository clone
+   directory, which is not the Actions workspace, so the read is
+   rejected. `http://127.0.0.1` on the runner is the supported
+   equivalent and the data never leaves the runner.
+4. Renovate runs against the calling repository, signs its commits
+   with the bot account's GPG key, and opens pull requests.
+
+### Prerequisites
+
+- A bot GitHub account (`tna-ds-backup` by default) that is a
+  member of the organisation with write access to the repository.
+- A GPG key on that account whose UID matches a **verified** email
+  address on the account, so commits are marked **Verified**.
+- A **fine-grained PAT** owned by the bot account, with the
+  resource owner set to `nationalarchives`:
+
+  | Scope | Permission | Access |
+  |---|---|---|
+  | Organization | Members | Read-only |
+  | Repository | Metadata | Read-only (automatic) |
+  | Repository | Contents | Read and write |
+  | Repository | Pull requests | Read and write |
+  | Repository | Issues | Read and write |
+  | Repository | Commit statuses | Read and write |
+  | Repository | Workflows | Read and write |
+  | Repository | Dependabot alerts | Read-only |
+
+  `Workflows: read and write` is required because the shared
+  presets update GitHub Actions workflow files. A PAT is used
+  rather than `GITHUB_TOKEN` so that pull requests raised by
+  Renovate trigger status checks.
+- An IAM role in the target AWS account trusted by the GitHub OIDC
+  provider, with permission to describe the resources being looked
+  up (for AMIs, `ec2:DescribeImages`).
+
+### Secrets
+
+The reusable workflow holds no secrets of its own. All three are
+read from the **calling** repository's Actions secrets and passed
+through explicitly — a reusable workflow cannot see the caller's
+secrets otherwise.
+
+| Secret | Contents |
+|---|---|
+| `RENOVATE_GITHUB_TOKEN` | The bot account's fine-grained PAT |
+| `RENOVATE_GPG_PRIVATE_KEY` | ASCII-armoured GPG private key |
+| `RENOVATE_GPG_PASSPHRASE` | Passphrase for that key |
+
+The AWS role is assumed via OIDC and needs no secret.
+
+### Workflow inputs
+
+All inputs are optional; the defaults suit National Archives
+Digital Services repositories.
+
+| Input | Default | Description |
+|---|---|---|
+| `git-author-name` | `tna-ds-backup` | Commit author. Must be the GitHub account owning the PAT, or status checks will not run on Renovate's pull requests. |
+| `git-author-email` | `s-GitHubDSBackup@nationalarchives.gov.uk` | Commit author email. Must be a verified address on the bot account **and** match the GPG key UID, or commits will not show as Verified. |
+| `log-level` | `info` | Set to `debug` when troubleshooting. |
+
+### Renovate version
+
+The CLI version is pinned in `.renovate-version` in this
+repository, and Renovate keeps that file up to date itself. All
+consumer repositories therefore move to a new Renovate version
+together, rather than drifting independently.
+
+## Onboard repo to Renovate CLI
+
+1. Remove `.github/dependabot.yml`, and make sure the Mend
+   Renovate app is **not** installed on the repository.
+
+2. Add `renovate.json`, extending the base presets plus any
+   CLI-only preset you need:
+
+   ```json
+   {
+     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+     "extends": [
+       "github>nationalarchives/renovate-config",
+       "github>nationalarchives/renovate-config:aws-ami"
+     ]
+   }
+   ```
+
+3. Add the three secrets listed under
+   [Secrets](#secrets) to the repository.
+
+4. Add a scheduled caller workflow, e.g.
+   `.github/workflows/update-dependencies.yml`:
+
+   ```yaml
+   name: Update dependencies
+
+   on:
+     workflow_dispatch:
+     schedule:
+       - cron: "0 2 * * *"
+
+   jobs:
+     renovate:
+       name: Renovate
+       permissions:
+         id-token: write
+         contents: write
+         issues: write
+         pull-requests: write
+       uses: nationalarchives/renovate-config/.github/workflows/run-renovate.yml@main
+       secrets:
+         RENOVATE_GITHUB_TOKEN: ${{ secrets.RENOVATE_GITHUB_TOKEN }}
+         RENOVATE_GPG_PRIVATE_KEY: ${{ secrets.RENOVATE_GPG_PRIVATE_KEY }}
+         RENOVATE_GPG_PASSPHRASE: ${{ secrets.RENOVATE_GPG_PASSPHRASE }}
+   ```
+
+   `id-token: write` is required for OIDC and must be granted by
+   the caller — permissions cannot be widened by the reusable
+   workflow.
+
+5. In repository settings, enable **auto-merge**.
+
+6. Dispatch the workflow manually once and check the resulting
+   commits show as **Verified** and authored by the bot account.
 
 ## Opting out or overriding
 

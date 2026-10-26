@@ -1,0 +1,29 @@
+name: Update dependencies
+
+# Caller for the reusable Run Renovate workflow. Copy this file into any
+# repository that should be kept up to date by the Renovate CLI, and add the
+# three secrets below to that repository's Actions secrets.
+#
+# NOTE: the nightly schedule is commented out in this repository only, because
+# renovate-config is currently also onboarded to the Mend Renovate app. Running
+# both would create duplicate pull requests. Uncomment the schedule in
+# consuming repositories.
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 2 * * *"
+
+jobs:
+  renovate:
+    name: Renovate
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
+    uses: nationalarchives/renovate-config/.github/workflows/run-renovate.yml@main
+    secrets:
+      RENOVATE_GITHUB_TOKEN: ${{ secrets.RENOVATE_GITHUB_TOKEN }}
+      RENOVATE_GPG_PRIVATE_KEY: ${{ secrets.RENOVATE_GPG_PRIVATE_KEY }}
+      RENOVATE_GPG_PASSPHRASE: ${{ secrets.RENOVATE_GPG_PASSPHRASE }}
