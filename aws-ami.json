@@ -1,0 +1,55 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "EC2 Image Builder AMI version pins in Terraform tfvars. Renovate CLI only: the datasource is served by the run-renovate reusable workflow, so this preset does nothing under the Mend Renovate app.",
+  "customDatasources": {
+    "aws-ami": {
+      "defaultRegistryUrlTemplate": "http://127.0.0.1:8099/{{packageName}}.json",
+      "format": "json"
+    }
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Read AMI version pins annotated with '# renovate: ami=<Image tag>'",
+      "managerFilePatterns": ["**/*.tfvars"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*ami=(?<depName>\\S+)\\s*\\r?\\n\\s*[A-Za-z0-9_]+\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "custom.aws-ami",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "AMI pins: one PR per image per environment",
+      "matchDatasources": ["custom.aws-ami"],
+      "addLabels": ["ami"],
+      "commitMessageTopic": "AMI {{depName}}",
+      "separateMinorPatch": false
+    },
+    {
+      "description": "dev AMI pins automerge once the Terraform plan check passes",
+      "matchDatasources": ["custom.aws-ami"],
+      "matchFileNames": ["**/_vars/dev/**"],
+      "additionalBranchPrefix": "dev-",
+      "addLabels": ["dev"],
+      "automerge": true
+    },
+    {
+      "description": "staging AMI pins raise a PR for review",
+      "matchDatasources": ["custom.aws-ami"],
+      "matchFileNames": ["**/_vars/staging/**"],
+      "additionalBranchPrefix": "staging-",
+      "addLabels": ["staging"],
+      "automerge": false
+    },
+    {
+      "description": "live AMI pins raise a PR for review",
+      "matchDatasources": ["custom.aws-ami"],
+      "matchFileNames": ["**/_vars/live/**"],
+      "additionalBranchPrefix": "live-",
+      "addLabels": ["live"],
+      "automerge": false
+    }
+  ]
+}

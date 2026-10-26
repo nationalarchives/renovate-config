@@ -6,6 +6,14 @@ name: Run Renovate
 # credentials the app cannot hold, such as an AWS role assumed via OIDC, or
 # where commits must be GPG signed by a specific bot account.
 #
+# With enable-ami-lookup, the job assumes an AWS role, reads the Image and
+# ImageVersion tags of the AMIs built by EC2 Image Builder, and serves them to
+# Renovate as a custom datasource on 127.0.0.1:8099. Port 8099 and the
+# "<Image tag>.json" filenames are a contract with the aws-ami preset: change
+# one and you must change the other. A file:// datasource cannot be used
+# instead, because Renovate confines those reads to its own repository clone
+# directory, which is not the Actions workspace.
+#
 # The calling repository supplies the three secrets below from its own Actions
 # secrets; this repository holds no secrets of its own.
 
@@ -31,6 +39,32 @@ on:
         description: "Renovate log level. Set to debug when troubleshooting."
         type: string
         default: "info"
+        required: false
+      enable-ami-lookup:
+        description: >-
+          Serve EC2 Image Builder AMI versions to Renovate as a custom
+          datasource. Required by the aws-ami preset; leave false otherwise.
+        type: boolean
+        default: false
+        required: false
+      aws-role-to-assume:
+        description: >-
+          IAM role ARN assumed via OIDC to read AMI tags. Needs
+          ec2:DescribeImages. Required when enable-ami-lookup is true.
+        type: string
+        default: ""
+        required: false
+      aws-region:
+        description: "AWS region queried for AMIs."
+        type: string
+        default: "eu-west-2"
+        required: false
+      ami-image-filter:
+        description: >-
+          Value matched against the AMI 'Image' tag, so a run can be narrowed to
+          one team's images. Supports wildcards.
+        type: string
+        default: "*"
         required: false
     secrets:
       RENOVATE_GITHUB_TOKEN:
@@ -58,12 +92,21 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Check AMI lookup inputs
+        if: inputs.enable-ami-lookup && inputs.aws-role-to-assume == ''
+        run: |
+          echo "aws-role-to-assume is required when enable-ami-lookup is true." >&2
+          exit 1
+
       # This repository, not the caller: Renovate reads its own configuration
       # from the caller over the API, so only .renovate-version is needed here.
+      # Renovate clones the target repository itself using RENOVATE_TOKEN, so
+      # no git credentials are needed on this clone.
       - name: Checkout renovate-config
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: nationalarchives/renovate-config
+          persist-credentials: false
 
       - name: Read Renovate version
         id: renovate-version
@@ -89,14 +132,99 @@ jobs:
         with:
           node-version: 24
 
+      - name: Configure AWS credentials
+        if: inputs.enable-ami-lookup
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ inputs.aws-role-to-assume }}
+          aws-region: ${{ inputs.aws-region }}
+
+      # One file per image, named after the Image tag, each holding the release
+      # list Renovate's custom datasource expects. Image Builder stamps every
+      # build with ImageVersion "<recipe version>-<build number>".
+      - name: Build AMI manifests
+        if: inputs.enable-ami-lookup
+        shell: bash
+        env:
+          AMI_IMAGE_FILTER: ${{ inputs.ami-image-filter }}
+        run: |
+          set -euo pipefail
+          manifest_dir="$RUNNER_TEMP/ami-manifests"
+          mkdir -p "$manifest_dir"
+
+          aws ec2 describe-images \
+            --owners self \
+            --filters "Name=tag:Image,Values=$AMI_IMAGE_FILTER" \
+                      "Name=tag-key,Values=ImageVersion" \
+            --query 'Images[].{image: Tags[?Key==`Image`]|[0].Value, version: Tags[?Key==`ImageVersion`]|[0].Value, created: CreationDate}' \
+            --output json > "$RUNNER_TEMP/ami-raw.json"
+
+          jq -c '
+            map(select(.image != null and .version != null))
+            | group_by(.image)[]
+            | {
+                image: .[0].image,
+                payload: { releases: map({ version: .version, releaseTimestamp: .created }) }
+              }
+          ' "$RUNNER_TEMP/ami-raw.json" > "$RUNNER_TEMP/ami-grouped.ndjson"
+
+          count=0
+          while read -r row; do
+            image=$(jq -r '.image' <<< "$row")
+            # Guard against a tag value escaping the manifest directory.
+            case "$image" in
+              */*|.*|"") echo "Skipping unusable Image tag: $image" >&2; continue ;;
+            esac
+            jq -c '.payload' <<< "$row" > "$manifest_dir/$image.json"
+            count=$((count + 1))
+          done < "$RUNNER_TEMP/ami-grouped.ndjson"
+
+          if [ "$count" -eq 0 ]; then
+            echo "No AMIs matched Image tag '$AMI_IMAGE_FILTER'." >&2
+            exit 1
+          fi
+          echo "Wrote manifests for $count image(s)."
+
+      - name: Start AMI manifest server
+        if: inputs.enable-ami-lookup
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ami-manifests"
+          python3 -m http.server 8099 --bind 127.0.0.1 \
+            > "$RUNNER_TEMP/ami-server.log" 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/ami-server.pid"
+
+          for _ in $(seq 1 20); do
+            if curl -sfo /dev/null "http://127.0.0.1:8099/"; then
+              echo "AMI manifest server ready."
+              exit 0
+            fi
+            sleep 0.5
+          done
+
+          echo "AMI manifest server did not start." >&2
+          cat "$RUNNER_TEMP/ami-server.log" >&2
+          exit 1
+
       - name: Run Renovate
         # "shell: bash" enables pipefail so a non-zero Renovate exit is not
         # swallowed by the grep that filters npm warnings.
         shell: bash
-        run: npx --yes renovate@${{ steps.renovate-version.outputs.version }} 2>&1 | grep -v "^npm warn"
+        run: npx --yes "renovate@$RENOVATE_VERSION" 2>&1 | grep -v "^npm warn"
         env:
+          RENOVATE_VERSION: ${{ steps.renovate-version.outputs.version }}
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_GITHUB_TOKEN }}
           RENOVATE_GIT_AUTHOR: "${{ inputs.git-author-name }} <${{ inputs.git-author-email }}>"
           RENOVATE_GIT_PRIVATE_KEY: ${{ secrets.RENOVATE_GPG_PRIVATE_KEY }}
           RENOVATE_REPOSITORIES: ${{ github.repository }}
           LOG_LEVEL: ${{ inputs.log-level }}
+
+      - name: Stop AMI manifest server
+        if: always() && inputs.enable-ami-lookup
+        shell: bash
+        run: |
+          pid_file="$RUNNER_TEMP/ami-server.pid"
+          if [ -f "$pid_file" ]; then
+            kill "$(cat "$pid_file")" 2>/dev/null || true
+          fi
