@@ -21,33 +21,33 @@
   ],
   "packageRules": [
     {
-      "description": "AMI pins: one PR per image per environment",
+      "description": "AMI pins: always take the latest build, no major/minor split",
       "matchDatasources": ["custom.aws-ami"],
       "addLabels": ["ami"],
-      "commitMessageTopic": "AMI {{depName}}",
+      "separateMajorMinor": false,
       "separateMinorPatch": false
     },
     {
-      "description": "dev AMI pins automerge once the Terraform plan check passes",
+      "description": "dev AMI pins: one grouped PR, automerged once checks pass",
       "matchDatasources": ["custom.aws-ami"],
       "matchFileNames": ["**/_vars/dev/**"],
-      "additionalBranchPrefix": "dev-",
+      "groupName": "AMI versions (dev)",
       "addLabels": ["dev"],
       "automerge": true
     },
     {
-      "description": "staging AMI pins raise a PR for review",
+      "description": "staging AMI pins: one grouped PR for review",
       "matchDatasources": ["custom.aws-ami"],
       "matchFileNames": ["**/_vars/staging/**"],
-      "additionalBranchPrefix": "staging-",
+      "groupName": "AMI versions (staging)",
       "addLabels": ["staging"],
       "automerge": false
     },
     {
-      "description": "live AMI pins raise a PR for review",
+      "description": "live AMI pins: one grouped PR for review",
       "matchDatasources": ["custom.aws-ami"],
       "matchFileNames": ["**/_vars/live/**"],
-      "additionalBranchPrefix": "live-",
+      "groupName": "AMI versions (live)",
       "addLabels": ["live"],
       "automerge": false
     }
